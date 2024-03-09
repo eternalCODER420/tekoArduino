@@ -1,3 +1,4 @@
+#include <Arduino.h>
 char InputChar;
 bool loggedActivity;
 bool overflow; // end of Stream
@@ -18,16 +19,18 @@ byte minute;
 byte second;
 byte BaseDay;
 byte Basemonth;
-byte Baseyear;
+//byte Baseyear;
 byte Basehour;
 byte Baseminute;
 byte monthdays[12];
+byte tempMonth;
+byte tempDaysInMonth;
 
 struct LogEntry
 {
   byte day;
   byte month;
-  byte year;
+  //byte year;
   byte hour;
   byte minute;
   byte second;
@@ -60,7 +63,7 @@ void setup()
   monthdays[11] = 31;
   BaseDay = 9;
   Basemonth = 3;
-  Baseyear = 24;
+  //Baseyear = 24;
   Basehour = 18;
   Baseminute = 30;
 }
@@ -155,16 +158,28 @@ void loop()
 void CreateTimeStamp()
 {
   LogEntry *newEntry = new LogEntry;
-
-  newEntry.second = 30;
-  newEntry->second = 30;
-    timeCalculation = millis();
-  newEntry->day = baseday;
-  newEntry->month = Basemonth;
-  newEntry->year = baseyear;
-  newEntry->hour = basehour;
-  newEntry->minute = baseminute;
-  //newEntry->second = now.second();
+  timeCalculation = millis() / 1000; // millisends -> seconds
+  // timeCalculation += basseconds;
+  newEntry->second = timeCalculation % 60;
+  timeCalculation /= 60; // get seconds
+  timeCalculation += Baseminute;
+  newEntry->minute = timeCalculation % 60;
+  timeCalculation /= 60; // get minutes
+  timeCalculation += Basehour;
+  newEntry->hour = timeCalculation % 24;
+  timeCalculation /= 24; // get days
+  timeCalculation += BaseDay;
+  tempMonth = Basemonth; // currentmonth
+  tempDaysInMonth = monthdays[tempMonth - 1];
+  while (tempDaysInMonth < timeCalculation)
+  {
+    timeCalculation -= tempDaysInMonth;
+    tempMonth++;
+    tempDaysInMonth = monthdays[tempMonth - 1];
+  }
+  newEntry->day = timeCalculation;
+  newEntry->month = tempMonth;
+  // newEntry->year = baseyear;
   newEntry->next = NULL;
 }
 
