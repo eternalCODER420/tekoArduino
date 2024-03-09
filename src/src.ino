@@ -19,7 +19,7 @@ byte minute;
 byte second;
 byte BaseDay;
 byte Basemonth;
-//byte Baseyear;
+// byte Baseyear;
 byte Basehour;
 byte Baseminute;
 byte monthdays[12];
@@ -30,14 +30,14 @@ struct LogEntry
 {
   byte day;
   byte month;
-  //byte year;
+  // byte year;
   byte hour;
   byte minute;
   byte second;
   LogEntry *next; // linked list pointer
 };
 
-LogEntry *logList = NULL; // Head of the linked list
+LogEntry *logListStack = NULL; // Head of the linked list
 
 void setup()
 {
@@ -63,9 +63,9 @@ void setup()
   monthdays[11] = 31;
   BaseDay = 9;
   Basemonth = 3;
-  //Baseyear = 24;
-  Basehour = 18;
-  Baseminute = 30;
+  // Baseyear = 24;
+  Basehour = 22;
+  Baseminute = 50;
 }
 
 void loop()
@@ -88,6 +88,7 @@ void loop()
       timeTill = millis() + MovementActivityTime;
       movementActive = true;
       counter = 0;
+      CreateTimeStamp();
     }
     else if (movementActive && currentmovementActive)
     { // recurring contact (first contact not finished yet)
@@ -150,9 +151,33 @@ void loop()
     Serial.print("Command:");
     Command.toLowerCase();
     Serial.print(Command);
+    if (Command == "list")
+      PrintLog();
     Command = "";
     Serial.println();
   }
+}
+void PrintLog()
+{
+  Serial.println("Logged Entries:");
+  LogEntry *currentEntry = logListStack;
+  while (currentEntry != NULL)
+  {
+    Serial.println();
+    Serial.print(currentEntry->day);
+    Serial.print("/");
+    Serial.print(currentEntry->month);
+    Serial.print("/");
+    // Serial.print(currentEntry->year);
+    // Serial.print(" ");
+    Serial.print(currentEntry->hour);
+    Serial.print(":");
+    Serial.print(currentEntry->minute);
+    Serial.print(":");
+    Serial.println(currentEntry->second);
+    currentEntry = currentEntry->next;
+  }
+  Serial.println();
 }
 
 void CreateTimeStamp()
@@ -160,12 +185,19 @@ void CreateTimeStamp()
   LogEntry *newEntry = new LogEntry;
   timeCalculation = millis() / 1000; // millisends -> seconds
   // timeCalculation += basseconds;
+  
+  // Serial.print(String(timeCalculation));
+  // Serial.println();
   newEntry->second = timeCalculation % 60;
   timeCalculation /= 60; // get seconds
   timeCalculation += Baseminute;
+  // Serial.print(String(timeCalculation));
+  //   Serial.println();
   newEntry->minute = timeCalculation % 60;
   timeCalculation /= 60; // get minutes
   timeCalculation += Basehour;
+  // Serial.print(String(timeCalculation));
+  //   Serial.println();
   newEntry->hour = timeCalculation % 24;
   timeCalculation /= 24; // get days
   timeCalculation += BaseDay;
@@ -179,9 +211,30 @@ void CreateTimeStamp()
   }
   newEntry->day = timeCalculation;
   newEntry->month = tempMonth;
+
+
+    // Serial.println();
+    // Serial.print(newEntry->day);
+    // Serial.print("/");
+    // Serial.print(newEntry->month);
+    // Serial.print("/");
+    // // Serial.print(newEntry->year);
+    // // Serial.print(" ");
+    // Serial.print(newEntry->hour);
+    // Serial.print(":");
+    // Serial.print(newEntry->minute);
+    // // Serial.print(":");
+    // // Serial.println(newEntry->second);
+
+
   // newEntry->year = baseyear;
-  newEntry->next = NULL;
+  LogEntry *tempEntry = logListStack;
+  logListStack = newEntry;
+  logListStack->next = tempEntry;
+
+  // newEntry->next = NULL;
 }
+
 
 void Interpret()
 {
