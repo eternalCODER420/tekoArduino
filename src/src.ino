@@ -4,14 +4,9 @@ const byte MovementSensorPin = 53;
 const unsigned int MovementActivityTime = 5000;
 const unsigned int FreeMemoryLimit = 1000;
 
-char inputChar;
-bool loggedActivity;
-bool overflow; // end of Stream
 bool movementActive;
 bool currentMovementActive;
 bool memoryLimitReached;
-byte streamlenght;
-String command;
 
 unsigned long timeTill;
 unsigned long counter;
@@ -36,13 +31,10 @@ void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  loggedActivity = false;
-  streamlenght = 0;
-  overflow = false;
   movementActive = false;
   pinMode(MovementSensorPin, INPUT);
   // default values
-  //monthDays[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; // Days in each month
+  // monthDays[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; // Days in each month
   baseValues.day = 10;
   baseValues.month = 3;
   baseValues.hour = 15;
@@ -52,12 +44,10 @@ void setup()
 void loop()
 {
   // put your main code here, to run repeatedly:
-  if (!loggedActivity)
-  {
-    Serial.print(F("Waiting"));
-    Serial.println();
-    loggedActivity = true;
-  }
+  // if (!loggedActivity) {
+  //   Serial.print(F("Waiting"));
+  //   Serial.println();
+  // }
 
   currentMovementActive = digitalRead(MovementSensorPin) == HIGH;
   if (movementActive || currentMovementActive)
@@ -68,20 +58,20 @@ void loop()
       Serial.print("Movement detected");
       timeTill = millis() + MovementActivityTime;
       movementActive = true;
-      counter = 0;
+      // counter = 0;
       if (!memoryLimitReached)
         createTimeStamp();
     }
     else if (movementActive && currentMovementActive)
     { // recurring contact (first contact not finished yet)
       timeTill = millis() + MovementActivityTime;
-      Serial.println("debug: still movement " + String(counter));
-      counter += 1;
+      // Serial.println("debug: still movement " + String(counter));
+      // counter += 1;
     }
     else if (movementActive && (!currentMovementActive))
     { // check if contact finished
-      Serial.println("debug: no movement " + String(counter));
-      counter += 1;
+      // Serial.println("debug: no movement " + String(counter));
+      // counter += 1;
       movementActive = (timeTill < millis());
       if (!movementActive)
       { // contact finished
@@ -91,45 +81,9 @@ void loop()
     }
   }
 
-  while (Serial.available() != 0)
+  if (Serial.available() != 0)
   {
-    streamlenght += 1;
-    inputChar = Serial.read();
-    delay(100);
-
-    if (overflow)
-    {
-      Serial.print(inputChar);
-    }
-    else
-    {
-      overflow = (streamlenght > 4);
-      if (!overflow)
-      {
-        command += inputChar;
-      }
-      else
-      {
-        Serial.print(F("Input above 4:"));
-        Serial.print(inputChar);
-      }
-    }
-  }
-
-  if (streamlenght != 0)
-  {
-    streamlenght = 0;
-    loggedActivity = false;
-    overflow = false;
-    Serial.println();
-    Serial.print("Command:");
-    command.toUpperCase();
-    Serial.print(command);
-    Interpret(command);
-    // if (Command == "list")
-    //   PrintLog();
-    command = "";
-    Serial.println();
+    Interpret(getUserInput());
   }
 }
 void PrintLog()
@@ -150,7 +104,7 @@ void PrintLogEntry(LogEntry *printEntry)
   Serial.print(printEntry->day);
   Serial.print("/");
   Serial.print(printEntry->month);
-  Serial.print("/");
+  Serial.print("/-");
   Serial.print(printEntry->hour);
   Serial.print(":");
   Serial.print(printEntry->minute);
@@ -203,17 +157,28 @@ void createTimeStamp()
   logListStack->next = tempEntry;
 }
 
-void Interpret(String &UserCommand)
+void Interpret(String UserCommand)
 {
-  // Serial.print(UserCommand);
-  // Serial.println();
+  if (UserCommand == "")
+  {
+    Serial.print("No Input.");
+    Serial.println();
+  }
+
+  Serial.println();
+  Serial.print("Command:");
+  UserCommand.toUpperCase();
+  UserCommand.trim();
+  Serial.print(UserCommand);
+  Serial.println();
+
   if (UserCommand == "CLER")
   {
     clearLog();
     return;
   }
 
-  if (UserCommand == "HELP" || UserCommand == "?")
+  if (UserCommand == "HELP")
   {
     Serial.print("?,help = get Commands");
     Serial.println();
@@ -233,21 +198,70 @@ void Interpret(String &UserCommand)
 
   if (UserCommand == "SET")
   {
+    byte tempStorage;
+
+    Serial.print("month:");
+    while (!Serial.available())
+    {
+      delay(10);
+    }
+    tempStorage = getUserInput().toInt();
+    if (tempStorage == 0 || tempStorage > 12)
+    {
+      Serial.println();
+      Serial.print("invalid month.");
+      return;
+    }
+    baseValues.month = tempStorage;
+
+    Serial.print("day:");
+    while (!Serial.available())
+    {
+      delay(10);
+    }
+    tempStorage = getUserInput().toInt();
+    if (tempStorage == 0 || tempStorage > monthDays[baseValues.month - 1])
+    {
+      Serial.println();
+      Serial.print("invalid day. Max Day:");
+      Serial.print(String(monthDays[baseValues.month - 1]));
+      return;
+    }
+    baseValues.day = tempStorage;
+
+    Serial.print("hour:");
+    while (!Serial.available())
+    {
+      delay(10);
+    }
+    tempStorage = getUserInput().toInt();
+    if (tempStorage > 23)
+    {
+      Serial.println();
+      Serial.print("invalid hour. Max Hour:23");
+      return;
+    }
+    baseValues.hour = tempStorage;
+
+    Serial.print("Minute:");
+    while (!Serial.available())
+    {
+      delay(10);
+    }
+    tempStorage = getUserInput().toInt();
+    if (tempStorage > 59)
+    {
+      Serial.println();
+      Serial.print("invalid hour. Max Hour:59");
+      return;
+    }
+    baseValues.minute = tempStorage;
+    Serial.println();
+    Serial.print("new base-time is set.");
+    Serial.println();
+
     return;
   }
-  // switch (Command) {
-  //   case "HELP":
-  //     Serial.print("?,help = get Commands");
-  //     Serial.println();
-  //     Serial.print("cler = reset log");
-  //     Serial.println();
-  //     Serial.print("get,log,list = get log");
-  //     Serial.println();
-  //     Serial.print("set = start set time sequence");
-  //   default:
-  //     Serial.println();
-
-  // }
   Serial.print("input not valid. Write help to get valid inputs");
 }
 
@@ -268,6 +282,39 @@ void clearLog()
   logListStack = NULL;
   Serial.print(String(getFreeMemory()));
   Serial.println();
+}
+
+String getUserInput()
+{
+  String command;
+  byte streamlenght = 0;
+  bool overflow = false; // end of Stream - prevent streamlenght overflow
+  char inputChar;
+  while (Serial.available() != 0)
+  {
+    streamlenght += 1;
+    inputChar = Serial.read();
+    delay(100);
+
+    if (overflow)
+    {
+      Serial.print(inputChar);
+    }
+    else
+    {
+      overflow = (streamlenght > 4);
+      if (!overflow)
+      {
+        command += inputChar;
+      }
+      else
+      {
+        Serial.print(F("Input above 4:"));
+        Serial.print(inputChar);
+      }
+    }
+  }
+  return command;
 }
 
 // Snippet below from web
