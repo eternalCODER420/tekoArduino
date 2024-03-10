@@ -43,19 +43,13 @@ void setup()
 
 void loop()
 {
-  // put your main code here, to run repeatedly:
-  // if (!loggedActivity) {
-  //   Serial.print(F("Waiting"));
-  //   Serial.println();
-  // }
-
   currentMovementActive = digitalRead(MovementSensorPin) == HIGH;
   if (movementActive || currentMovementActive)
   { // movement sensor activity
     if ((!movementActive) && currentMovementActive)
     { // first contact
       Serial.println();
-      Serial.print("Movement detected");
+      Serial.print(F("Movement detected"));
       timeTill = millis() + MovementActivityTime;
       movementActive = true;
       // counter = 0;
@@ -76,7 +70,7 @@ void loop()
       if (!movementActive)
       { // contact finished
         Serial.println();
-        Serial.println("Movement stopped");
+        Serial.println(F("Movement stopped"));
       }
     }
   }
@@ -88,7 +82,7 @@ void loop()
 }
 void PrintLog()
 {
-  Serial.println("Logged Entries:");
+  Serial.println(F("Logged Entries:"));
   LogEntry *currentEntry = logListStack;
   while (currentEntry != NULL)
   {
@@ -102,13 +96,13 @@ void PrintLogEntry(LogEntry *printEntry)
 {
   Serial.println();
   Serial.print(printEntry->day);
-  Serial.print("/");
+  Serial.print(F("/"));
   Serial.print(printEntry->month);
-  Serial.print("/-");
+  Serial.print(F("/-"));
   Serial.print(printEntry->hour);
-  Serial.print(":");
+  Serial.print(F(":"));
   Serial.print(printEntry->minute);
-  Serial.print(":");
+  Serial.print(F(":"));
   Serial.println(printEntry->second);
 }
 
@@ -142,13 +136,13 @@ void createTimeStamp()
 
   PrintLogEntry(newEntry);
 
-  Serial.print("Free Memory:");
+  Serial.print(F("Free Memory:"));
   int freeMemory = getFreeMemory();
   Serial.print(String(freeMemory));
   Serial.println();
   memoryLimitReached = freeMemory < FreeMemoryLimit;
   if (memoryLimitReached)
-    Serial.print("Memory Limit Reached. Logging stopped. Use command cler to clear loglist!");
+    Serial.print(F("Memory Limit Reached. Logging stopped. Use command cler to clear loglist!"));
 
   Serial.println();
 
@@ -161,32 +155,32 @@ void Interpret(String UserCommand)
 {
   if (UserCommand == "")
   {
-    Serial.print("No Input.");
+    Serial.print(F("No Input."));
     Serial.println();
   }
 
   Serial.println();
-  Serial.print("Command:");
+  Serial.print(F("Command:"));
   UserCommand.toUpperCase();
   UserCommand.trim();
   Serial.print(UserCommand);
   Serial.println();
 
-  if (UserCommand == "CLER")
+  if (UserCommand == "CLER" || UserCommand == "CLR")
   {
     clearLog();
     return;
   }
 
-  if (UserCommand == "HELP")
+  if (UserCommand == "HELP"|| UserCommand == "?" )
   {
-    Serial.print("?,help = get Commands");
+    Serial.print(F("?,help = get Commands"));
     Serial.println();
-    Serial.print("cler = reset log");
+    Serial.print(F("cler = reset log"));
     Serial.println();
-    Serial.print("get,log,list = get log");
+    Serial.print(F("get,log,list = get log"));
     Serial.println();
-    Serial.print("set = start set time sequence");
+    Serial.print(F("set = start set time sequence"));
     Serial.println();
     return;
   }
@@ -200,7 +194,7 @@ void Interpret(String UserCommand)
   {
     byte tempStorage;
 
-    Serial.print("month:");
+    Serial.print(F("month:"));
     while (!Serial.available())
     {
       delay(10);
@@ -209,12 +203,12 @@ void Interpret(String UserCommand)
     if (tempStorage == 0 || tempStorage > 12)
     {
       Serial.println();
-      Serial.print("invalid month.");
+      Serial.print(F("invalid month."));
       return;
     }
     baseValues.month = tempStorage;
 
-    Serial.print("day:");
+    Serial.print(F("day:"));
     while (!Serial.available())
     {
       delay(10);
@@ -223,13 +217,13 @@ void Interpret(String UserCommand)
     if (tempStorage == 0 || tempStorage > monthDays[baseValues.month - 1])
     {
       Serial.println();
-      Serial.print("invalid day. Max Day:");
+      Serial.print(F("invalid day. Max Day:"));
       Serial.print(String(monthDays[baseValues.month - 1]));
       return;
     }
     baseValues.day = tempStorage;
 
-    Serial.print("hour:");
+    Serial.print(F("hour:"));
     while (!Serial.available())
     {
       delay(10);
@@ -238,12 +232,12 @@ void Interpret(String UserCommand)
     if (tempStorage > 23)
     {
       Serial.println();
-      Serial.print("invalid hour. Max Hour:23");
+      Serial.print(F("invalid hour. Max Hour:23"));
       return;
     }
     baseValues.hour = tempStorage;
 
-    Serial.print("Minute:");
+    Serial.print(F("Minute:"));
     while (!Serial.available())
     {
       delay(10);
@@ -252,17 +246,17 @@ void Interpret(String UserCommand)
     if (tempStorage > 59)
     {
       Serial.println();
-      Serial.print("invalid hour. Max Hour:59");
+      Serial.print(F("invalid hour. Max Hour:59"));
       return;
     }
     baseValues.minute = tempStorage;
     Serial.println();
-    Serial.print("new base-time is set.");
+    Serial.print(F("new base-time is set."));
     Serial.println();
 
     return;
   }
-  Serial.print("input not valid. Write help to get valid inputs");
+  Serial.print(F("input not valid. Write help to get valid inputs"));
 }
 
 void clearLog()
