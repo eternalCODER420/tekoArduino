@@ -1,19 +1,22 @@
 #include <Arduino.h>
-char InputChar;
-bool loggedActivity;
-bool overflow; // end of Stream
-bool movementActive;
-bool currentmovementActive;
-bool MemoryLimitReached;
-byte Streamlenght;
-String Command;
+
 const byte MovementSensorPin = 53;
 const unsigned int MovementActivityTime = 5000;
 const unsigned int FreeMemoryLimit = 1000;
+
+char inputChar;
+bool loggedActivity;
+bool overflow; // end of Stream
+bool movementActive;
+bool currentMovementActive;
+bool memoryLimitReached;
+byte streamlenght;
+String command;
+
 unsigned long timeTill;
 unsigned long counter;
-unsigned long timeCalculation;
-byte monthdays[12];
+
+byte monthDays[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; // Days in each month
 
 struct LogEntry
 {
@@ -27,36 +30,23 @@ struct LogEntry
 };
 
 LogEntry *logListStack = NULL; // Head of the linked list
-LogEntry BaseValues;
+LogEntry baseValues;
 
 void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(9600);
   loggedActivity = false;
-  Streamlenght = 0;
+  streamlenght = 0;
   overflow = false;
   movementActive = false;
   pinMode(MovementSensorPin, INPUT);
   // default values
-  monthdays[0] = 31; // jan
-  monthdays[1] = 29;
-  monthdays[2] = 31;
-  monthdays[3] = 30; // april
-  monthdays[4] = 31;
-  monthdays[5] = 30;
-  monthdays[6] = 31; // jul
-  monthdays[7] = 31;
-  monthdays[8] = 30;
-  monthdays[9] = 31; // okt
-  monthdays[10] = 30;
-  monthdays[11] = 31;
-  BaseValues.day = 9;
-  BaseValues.month = 3;
-  BaseValues.hour = 22;
-  BaseValues.minute = 50;
-  BaseValues.month = 3;
-  BaseValues.day = 9;
+  //monthDays[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; // Days in each month
+  baseValues.day = 10;
+  baseValues.month = 3;
+  baseValues.hour = 15;
+  baseValues.minute = 5;
 }
 
 void loop()
@@ -69,26 +59,26 @@ void loop()
     loggedActivity = true;
   }
 
-  currentmovementActive = digitalRead(MovementSensorPin) == HIGH;
-  if (movementActive || currentmovementActive)
+  currentMovementActive = digitalRead(MovementSensorPin) == HIGH;
+  if (movementActive || currentMovementActive)
   { // movement sensor activity
-    if ((!movementActive) && currentmovementActive)
+    if ((!movementActive) && currentMovementActive)
     { // first contact
       Serial.println();
       Serial.print("Movement detected");
       timeTill = millis() + MovementActivityTime;
       movementActive = true;
       counter = 0;
-      if (!MemoryLimitReached)
-        CreateTimeStamp();
+      if (!memoryLimitReached)
+        createTimeStamp();
     }
-    else if (movementActive && currentmovementActive)
+    else if (movementActive && currentMovementActive)
     { // recurring contact (first contact not finished yet)
       timeTill = millis() + MovementActivityTime;
       Serial.println("debug: still movement " + String(counter));
       counter += 1;
     }
-    else if (movementActive && (!currentmovementActive))
+    else if (movementActive && (!currentMovementActive))
     { // check if contact finished
       Serial.println("debug: no movement " + String(counter));
       counter += 1;
@@ -103,42 +93,42 @@ void loop()
 
   while (Serial.available() != 0)
   {
-    Streamlenght += 1;
-    InputChar = Serial.read();
+    streamlenght += 1;
+    inputChar = Serial.read();
     delay(100);
 
     if (overflow)
     {
-      Serial.print(InputChar);
+      Serial.print(inputChar);
     }
     else
     {
-      overflow = (Streamlenght > 4);
+      overflow = (streamlenght > 4);
       if (!overflow)
       {
-        Command += InputChar;
+        command += inputChar;
       }
       else
       {
         Serial.print(F("Input above 4:"));
-        Serial.print(InputChar);
+        Serial.print(inputChar);
       }
     }
   }
 
-  if (Streamlenght != 0)
+  if (streamlenght != 0)
   {
-    Streamlenght = 0;
+    streamlenght = 0;
     loggedActivity = false;
     overflow = false;
     Serial.println();
     Serial.print("Command:");
-    Command.toUpperCase();
-    Serial.print(Command);
-    Interpret(Command);
+    command.toUpperCase();
+    Serial.print(command);
+    Interpret(command);
     // if (Command == "list")
     //   PrintLog();
-    Command = "";
+    command = "";
     Serial.println();
   }
 }
@@ -168,29 +158,30 @@ void PrintLogEntry(LogEntry *printEntry)
   Serial.println(printEntry->second);
 }
 
-void CreateTimeStamp()
+void createTimeStamp()
 {
   byte tempMonth;
   byte tempDaysInMonth;
+  unsigned long timeCalculation;
 
   LogEntry *newEntry = new LogEntry;
   timeCalculation = millis() / 1000; // millisends -> seconds
   newEntry->second = timeCalculation % 60;
   timeCalculation /= 60; // get seconds
-  timeCalculation += BaseValues.minute;
+  timeCalculation += baseValues.minute;
   newEntry->minute = timeCalculation % 60;
   timeCalculation /= 60; // get minutes
-  timeCalculation += BaseValues.hour;
+  timeCalculation += baseValues.hour;
   newEntry->hour = timeCalculation % 24;
   timeCalculation /= 24; // get days
-  timeCalculation += BaseValues.day;
-  tempMonth = BaseValues.month; // currentmonth
-  tempDaysInMonth = monthdays[tempMonth - 1];
+  timeCalculation += baseValues.day;
+  tempMonth = baseValues.month; // currentmonth
+  tempDaysInMonth = monthDays[tempMonth - 1];
   while (tempDaysInMonth < timeCalculation)
   {
     timeCalculation -= tempDaysInMonth;
     tempMonth++;
-    tempDaysInMonth = monthdays[tempMonth - 1];
+    tempDaysInMonth = monthDays[tempMonth - 1];
   }
   newEntry->day = timeCalculation;
   newEntry->month = tempMonth;
@@ -201,9 +192,9 @@ void CreateTimeStamp()
   int freeMemory = getFreeMemory();
   Serial.print(String(freeMemory));
   Serial.println();
-  MemoryLimitReached = freeMemory < FreeMemoryLimit;
-  if (MemoryLimitReached)
-    Serial.print("Memory Limit Reached. Logging stopped. Use command clr to clear loglist!");
+  memoryLimitReached = freeMemory < FreeMemoryLimit;
+  if (memoryLimitReached)
+    Serial.print("Memory Limit Reached. Logging stopped. Use command cler to clear loglist!");
 
   Serial.println();
 
@@ -212,10 +203,10 @@ void CreateTimeStamp()
   logListStack->next = tempEntry;
 }
 
-void Interpret(String UserCommand)
+void Interpret(String &UserCommand)
 {
-  Serial.print(UserCommand);
-  Serial.println();
+  // Serial.print(UserCommand);
+  // Serial.println();
   if (UserCommand == "CLER")
   {
     clearLog();
@@ -226,7 +217,7 @@ void Interpret(String UserCommand)
   {
     Serial.print("?,help = get Commands");
     Serial.println();
-    Serial.print("clr = reset log");
+    Serial.print("cler = reset log");
     Serial.println();
     Serial.print("get,log,list = get log");
     Serial.println();
@@ -248,7 +239,7 @@ void Interpret(String UserCommand)
   //   case "HELP":
   //     Serial.print("?,help = get Commands");
   //     Serial.println();
-  //     Serial.print("clr = reset log");
+  //     Serial.print("cler = reset log");
   //     Serial.println();
   //     Serial.print("get,log,list = get log");
   //     Serial.println();
@@ -264,7 +255,7 @@ void clearLog()
 {
   Serial.print(String(getFreeMemory()));
   Serial.println();
-  MemoryLimitReached = false;
+  memoryLimitReached = false;
   LogEntry *currentEntry = logListStack;
   LogEntry *nextEntry;
   while (currentEntry != NULL)
