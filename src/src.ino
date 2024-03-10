@@ -7,24 +7,11 @@ bool currentmovementActive;
 byte Streamlenght;
 String Command;
 const byte MovementSensorPin = 53;
-unsigned int MovementActivityTime = 5000;
+const unsigned int MovementActivityTime = 5000;
 unsigned long timeTill;
 unsigned long counter;
 unsigned long timeCalculation;
-byte day;
-byte month;
-byte year;
-byte hour;
-byte minute;
-byte second;
-byte BaseDay;
-byte Basemonth;
-// byte Baseyear;
-byte Basehour;
-byte Baseminute;
 byte monthdays[12];
-byte tempMonth;
-byte tempDaysInMonth;
 
 struct LogEntry
 {
@@ -38,6 +25,7 @@ struct LogEntry
 };
 
 LogEntry *logListStack = NULL; // Head of the linked list
+LogEntry BaseValues;
 
 void setup()
 {
@@ -61,11 +49,12 @@ void setup()
   monthdays[9] = 31; // okt
   monthdays[10] = 30;
   monthdays[11] = 31;
-  BaseDay = 9;
-  Basemonth = 3;
-  // Baseyear = 24;
-  Basehour = 22;
-  Baseminute = 50;
+  BaseValues.day = 9;
+  BaseValues.month = 3;
+  BaseValues.hour = 22;
+  BaseValues.minute = 50;
+  BaseValues.month = 3;
+  BaseValues.day = 9;
 }
 
 void loop()
@@ -108,14 +97,6 @@ void loop()
       }
     }
   }
-
-  //   while(digitalRead(MovementSensor) == HIGH)
-  //   {
-  //     delay(50);
-  //   }
-  //   Serial.println();
-  //   Serial.println("Movement stopped");
-  // }
 
   while (Serial.available() != 0)
   {
@@ -163,45 +144,43 @@ void PrintLog()
   LogEntry *currentEntry = logListStack;
   while (currentEntry != NULL)
   {
-    Serial.println();
-    Serial.print(currentEntry->day);
-    Serial.print("/");
-    Serial.print(currentEntry->month);
-    Serial.print("/");
-    // Serial.print(currentEntry->year);
-    // Serial.print(" ");
-    Serial.print(currentEntry->hour);
-    Serial.print(":");
-    Serial.print(currentEntry->minute);
-    Serial.print(":");
-    Serial.println(currentEntry->second);
+    PrintLogEntry(currentEntry);
     currentEntry = currentEntry->next;
   }
   Serial.println();
 }
 
+void PrintLogEntry(LogEntry *printEntry)
+{
+  Serial.println();
+  Serial.print(printEntry->day);
+  Serial.print("/");
+  Serial.print(printEntry->month);
+  Serial.print("/");
+  Serial.print(printEntry->hour);
+  Serial.print(":");
+  Serial.print(printEntry->minute);
+  Serial.print(":");
+  Serial.println(printEntry->second);
+}
+
 void CreateTimeStamp()
 {
+  byte tempMonth;
+  byte tempDaysInMonth;
+
   LogEntry *newEntry = new LogEntry;
   timeCalculation = millis() / 1000; // millisends -> seconds
-  // timeCalculation += basseconds;
-  
-  // Serial.print(String(timeCalculation));
-  // Serial.println();
   newEntry->second = timeCalculation % 60;
   timeCalculation /= 60; // get seconds
-  timeCalculation += Baseminute;
-  // Serial.print(String(timeCalculation));
-  //   Serial.println();
+  timeCalculation += BaseValues.minute;
   newEntry->minute = timeCalculation % 60;
   timeCalculation /= 60; // get minutes
-  timeCalculation += Basehour;
-  // Serial.print(String(timeCalculation));
-  //   Serial.println();
+  timeCalculation += BaseValues.hour;
   newEntry->hour = timeCalculation % 24;
   timeCalculation /= 24; // get days
-  timeCalculation += BaseDay;
-  tempMonth = Basemonth; // currentmonth
+  timeCalculation += BaseValues.day;
+  tempMonth = BaseValues.month; // currentmonth
   tempDaysInMonth = monthdays[tempMonth - 1];
   while (tempDaysInMonth < timeCalculation)
   {
@@ -212,20 +191,11 @@ void CreateTimeStamp()
   newEntry->day = timeCalculation;
   newEntry->month = tempMonth;
 
+  PrintLogEntry(newEntry);
 
-    // Serial.println();
-    // Serial.print(newEntry->day);
-    // Serial.print("/");
-    // Serial.print(newEntry->month);
-    // Serial.print("/");
-    // // Serial.print(newEntry->year);
-    // // Serial.print(" ");
-    // Serial.print(newEntry->hour);
-    // Serial.print(":");
-    // Serial.print(newEntry->minute);
-    // // Serial.print(":");
-    // // Serial.println(newEntry->second);
-
+  Serial.print("Free Memory:");
+  Serial.print(String(getFreeMemory()));
+  Serial.println();
 
   // newEntry->year = baseyear;
   LogEntry *tempEntry = logListStack;
@@ -235,19 +205,61 @@ void CreateTimeStamp()
   // newEntry->next = NULL;
 }
 
-
-void Interpret()
+void Interpret(String Command)
 {
+  if (Command == "HELP" || Command == "?")
+  {
+    Serial.print("?,help = get Commands");
+    Serial.println();
+    Serial.print("clr = reset log");
+    Serial.println();
+    Serial.print("get,log,list = get log");
+    Serial.println();
+    Serial.print("set = start set time sequence");
+    Serial.println();
+    return;
+  }
+  if (Command == "GET" || Command == "LOG" || Command == "LIST")
+  {
+    PrintLog();
+    return;
+  }
+  if (Command == "CLR")
+  {
+    return;
+  }
+  if (Command == "SET")
+  {
+    return;
+  }
   // switch (Command) {
-  // case "HELP":
-  //   Serial.print("?,help = get Commands");
-  //   Serial.println();
-  //   Serial.print("clr = reset log");
-  //   Serial.println();
-  //   Serial.print("get,log = get log");
-  //   Serial.println();
-  //   Serial.print("set = start set time sequence");
-  // default:
-  //   Serial.println();
-  //   Serial.print("input not valid. Write help to get valid inputs");
+  //   case "HELP":
+  //     Serial.print("?,help = get Commands");
+  //     Serial.println();
+  //     Serial.print("clr = reset log");
+  //     Serial.println();
+  //     Serial.print("get,log,list = get log");
+  //     Serial.println();
+  //     Serial.print("set = start set time sequence");
+  //   default:
+  //     Serial.println();
+
+  // }
+  Serial.print("input not valid. Write help to get valid inputs");
+}
+
+// Snippet below from web
+// Author: https://forum.arduino.cc/t/how-to-create-and-free-dynamic-arrays-with-arduino/934662
+// Formatting: https://forum.arduino.cc/t/how-to-create-and-free-dynamic-arrays-with-arduino/934662/12
+extern unsigned int __bss_end;
+extern void *__brkval;
+
+int getFreeMemory()
+{
+  int free_memory;
+  if ((int)__brkval == 0)
+    free_memory = ((int)&free_memory) - ((int)&__bss_end);
+  else
+    free_memory = ((int)&free_memory) - ((int)__brkval);
+  return free_memory;
 }
