@@ -5,19 +5,19 @@
 
 // Author: simrem singh
 
-const byte MovementSensorPin = 53;
-const unsigned int MovementActivityTime = 5000;
+const byte MOVMENT_SENSOR_PIN = 53;
+const unsigned int MOVEMENT_ACTIVITY_TIME = 5000;
 
 bool movementActive;
-bool currentMovementActive;
+bool movementSensed;
 
-unsigned long timeTill;
+unsigned long timeTillActivityDepricated;
 
 void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  pinMode(MovementSensorPin, INPUT);
+  pinMode(MOVMENT_SENSOR_PIN, INPUT);
   // default values
   initLogger();
 
@@ -31,25 +31,25 @@ void loop()
 
 void checkMovement()
 {
-  currentMovementActive = digitalRead(MovementSensorPin) == HIGH;
-  if (movementActive || currentMovementActive)
+  movementSensed = digitalRead(MOVMENT_SENSOR_PIN) == HIGH;
+  if (movementActive || movementSensed)
   { // movement sensor activity
-    if ((!movementActive) && currentMovementActive)
+    if ((!movementActive) && movementSensed)
     { // first contact
       Serial.println();
       Serial.print(F("Movement detected"));
-      timeTill = millis() + MovementActivityTime;
+      timeTillActivityDepricated = millis() + MOVEMENT_ACTIVITY_TIME;
       movementActive = true;
 
       createTimeStamp();
     }
-    else if (movementActive && currentMovementActive)
+    else if (movementActive && movementSensed)
     { // recurring contact (first contact not finished yet)
-      timeTill = millis() + MovementActivityTime;
+      timeTillActivityDepricated = millis() + MOVEMENT_ACTIVITY_TIME;
     }
-    else// if (movementActive && (!currentMovementActive))
+    else// if (movementActive && (!movementSensed))
     { // check if contact finished
-      movementActive = (timeTill < millis());
+      movementActive = (timeTillActivityDepricated < millis());
       if (!movementActive)
       { // contact finished
         Serial.println();
@@ -108,7 +108,7 @@ void interpret(String UserCommand)
 
   if (UserCommand == "SET")
   {
-    SetBaseTime();
+    setBaseTime();
     return;
   }
   Serial.print(F("input not valid. Write help to get valid inputs"));

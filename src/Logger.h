@@ -32,7 +32,7 @@ void initLogger()
   baseValues.minute = 5;
 }
 
-void PrintLogEntry(LogEntry *printEntry)
+void printLogEntry(LogEntry *printEntry)
 {
   Serial.println();
   Serial.print(printEntry->day);
@@ -52,7 +52,7 @@ void PrintLog()
   LogEntry *currentEntry = logListStack;
   while (currentEntry != NULL)
   {
-    PrintLogEntry(currentEntry);
+    printLogEntry(currentEntry);
     currentEntry = currentEntry->next;
   }
   Serial.println();
@@ -90,7 +90,7 @@ void createTimeStamp()
   newEntry->day = timeCalculation;
   newEntry->month = tempMonth;
 
-  PrintLogEntry(newEntry);
+  printLogEntry(newEntry);
 
   Serial.print(F("Free Memory:"));
   int freeMemory = getFreeMemory();
@@ -107,7 +107,7 @@ void createTimeStamp()
   logListStack->next = tempEntry;
 }
 
-void SetBaseTime()
+void setBaseTime()
 {
   byte tempStorage;
 
