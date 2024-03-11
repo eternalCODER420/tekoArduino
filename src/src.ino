@@ -67,9 +67,9 @@ void checkUserInput()
   }
 }
 
-void interpret(String UserCommand)
+void interpret(String userCommand)
 {
-  if (UserCommand == "")
+  if (userCommand == "")
   {
     Serial.print(F("No Input."));
     Serial.println();
@@ -77,18 +77,18 @@ void interpret(String UserCommand)
 
   Serial.println();
   Serial.print(F("Command:"));
-  UserCommand.toUpperCase();
-  UserCommand.trim();
-  Serial.print(UserCommand);
+  userCommand.toUpperCase();
+  userCommand.trim();
+  Serial.print(userCommand);
   Serial.println();
 
-  if (UserCommand == "CLER" || UserCommand == "CLR")
+  if (userCommand == "CLER" || userCommand == "CLR")
   {
     clearLog();
     return;
   }
 
-  if (UserCommand == "HELP" || UserCommand == "?")
+  if (userCommand == "HELP" || userCommand == "?")
   {
     Serial.print(F("?,help = get Commands"));
     Serial.println();
@@ -100,13 +100,13 @@ void interpret(String UserCommand)
     Serial.println();
     return;
   }
-  if (UserCommand == "GET" || UserCommand == "LOG" || UserCommand == "LIST")
+  if (userCommand == "GET" || userCommand == "LOG" || userCommand == "LIST")
   {
     PrintLog();
     return;
   }
 
-  if (UserCommand == "SET")
+  if (userCommand == "SET")
   {
     setBaseTime();
     return;
